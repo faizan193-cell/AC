@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perioperative Antithrombotic Decision-Support Tool</title>
+<style>
+  :root{
+    --navy:#1f3864; --blue:#2e5496; --lite:#dce6f1; --accent:#2e7d5b;
+    --hold:#b23b3b; --continue:#2e7d5b; --amber:#b5820a; --amberbg:#fdf6e3;
+    --ink:#1c2330; --muted:#5b6472; --line:#d9dee6; --bg:#eef1f6; --card:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;}
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:26px 22px 20px;}
+  header h1{margin:0 0 4px;font-size:23px;font-weight:700;letter-spacing:.2px;}
+  header p{margin:0;font-size:13.5px;opacity:.9;}
+  .disclaimer{background:var(--amberbg);border-left:5px solid var(--amber);color:#5a4406;
+    padding:11px 16px;font-size:13px;margin:0;}
+  .disclaimer b{color:#7a5c00;}
+  .wrap{max-width:1120px;margin:0 auto;padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  @media(max-width:880px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;
+    box-shadow:0 1px 3px rgba(20,30,50,.05);}
+  .panel h2{margin:0 0 14px;font-size:15px;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;
+    border-bottom:2px solid var(--lite);padding-bottom:8px;}
+  .fld{margin-bottom:16px;}
+  .fld label{display:block;font-weight:600;font-size:13.5px;margin-bottom:6px;color:var(--ink);}
+  .fld .hint{font-weight:400;color:var(--muted);font-size:12px;}
+  select,input[type=number]{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+    font-size:14px;background:#fbfcfe;color:var(--ink);}
+  select:focus,input:focus{outline:2px solid var(--blue);border-color:var(--blue);}
+  .druggrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  @media(max-width:520px){.druggrid{grid-template-columns:1fr;}}
+  .chk{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--line);
+    border-radius:9px;font-size:13.5px;cursor:pointer;background:#fbfcfe;transition:.12s;}
+  .chk:hover{border-color:var(--blue);background:#f2f6fc;}
+  .chk input{width:16px;height:16px;accent-color:var(--blue);}
+  .chk .cls{margin-left:auto;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .chk.on{background:#e8f0fb;border-color:var(--blue);}
+  .toggle{display:flex;gap:10px;align-items:center;}
+  .switchbtn{flex:1;text-align:center;padding:9px;border:1px solid var(--line);border-radius:9px;
+    cursor:pointer;font-size:13.5px;background:#fbfcfe;font-weight:600;color:var(--muted);}
+  .switchbtn.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .actions{grid-column:1/-1;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:-4px;}
+  .btn{padding:13px 30px;border-radius:11px;font-size:15px;font-weight:700;border:none;cursor:pointer;}
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-primary:hover{background:#162a4d;}
+  .btn-ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .btn-ghost:hover{background:var(--lite);}
+  /* results */
+  #results{grid-column:1/-1;display:none;}
+  .rhead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:6px;}
+  .rhead h2{color:var(--navy);font-size:19px;margin:0;}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:14px 0;}
+  .scard{border:1px solid var(--line);border-radius:12px;padding:15px;background:var(--card);}
+  .scard.bridge{border-top:4px solid var(--blue);}
+  .scard.block{border-top:4px solid var(--accent);}
+  .scard h3{margin:0 0 7px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+  .scard .big{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:5px;}
+  .scard p{margin:0;font-size:12.5px;color:var(--ink);}
+  .cite{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic;}
+  table{width:100%;border-collapse:collapse;margin-top:8px;background:#fff;border-radius:12px;overflow:hidden;
+    border:1px solid var(--line);}
+  th{background:var(--navy);color:#fff;text-align:left;padding:11px 13px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;}
+  td{padding:11px 13px;font-size:13.5px;border-top:1px solid var(--line);vertical-align:top;}
+  tr:nth-child(even) td{background:#f7f9fc;}
+  .pill{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11.5px;font-weight:700;color:#fff;}
+  .pill.HOLD{background:var(--hold);}
+  .pill.CONTINUE{background:var(--continue);}
+  .drugname{font-weight:700;color:var(--navy);}
+  .drugcls{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+  .warns{margin:14px 0 4px;}
+  .warn{background:var(--amberbg);border-left:4px solid var(--amber);padding:10px 14px;border-radius:8px;
+    font-size:13px;color:#5a4406;margin-bottom:8px;}
+  .asra-line{color:var(--accent);font-weight:600;}
+  .note{color:var(--muted);font-size:12px;}
+  .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:22px;font-size:14px;}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:18px;}
+  @media print{
+    header,.disclaimer{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .panel:not(#results){display:none;} .actions{display:none;} body{background:#fff;}
+    #results{display:block!important;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Perioperative Antithrombotic Decision-Support Tool</h1>
+  <p>Hold · continue · bridge · ASRA timing for anticoagulants &amp; antiplatelets &nbsp;|&nbsp; Department of Anesthesiology</p>
+</header>
+<p class="disclaimer"><b>Advisory only — not a directive.</b> Encoded from CHEST 2022, PAUSE, BRIDGE, ACC 2017 &amp; ASRA 4th-edition guidance. Every recommendation must be confirmed by the responsible physician against the current full-text guideline and adjusted for the individual patient. Does not replace clinical judgment.</p>
+
+<div class="wrap">
+  <!-- LEFT: patient + drugs -->
+  <div class="panel">
+    <h2>Patient &amp; Medications</h2>
+
+    <div class="fld">
+      <label>Creatinine clearance (CrCl) <span class="hint">mL/min — drives DOAC &amp; LMWH timing</span></label>
+      <input type="number" id="crcl" min="0" max="200" placeholder="e.g., 65 (leave blank if unknown)">
+    </div>
+
+    <div class="fld">
+      <label>Antithrombotic agent(s) <span class="hint">select all the patient is taking</span></label>
+      <div class="druggrid" id="drugGrid"></div>
+    </div>
+
+    <div class="fld" id="cvWrap" style="display:none;">
+      <label>Aspirin indication</label>
+      <div class="toggle">
+        <div class="switchbtn on" data-cv="1" id="cvHigh">Secondary prevention / high CV risk / stent</div>
+        <div class="switchbtn" data-cv="0" id="cvLow">Primary prevention</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: procedure + risk -->
+  <div class="panel">
+    <h2>Procedure &amp; Risk</h2>
+
+    <div class="fld">
+      <label>Indication / dominant thrombotic reason</label>
+      <select id="reason">
+        <option value="afib">Atrial fibrillation</option>
+        <option value="vte">Venous thromboembolism (VTE)</option>
+        <option value="mech_valve">Mechanical heart valve</option>
+        <option value="stent">Recent coronary stent / PCI</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+    <div class="fld">
+      <label>Thrombotic risk tier <span class="hint">governs bridging</span></label>
+      <select id="thrombotic">
+        <option value="low">Low — e.g., CHA₂DS₂-VASc ≤4, bileaflet aortic valve no risk factors, VTE &gt;12 mo</option>
+        <option value="moderate" selected>Moderate — e.g., CHA₂DS₂-VASc 5–6, VTE 3–12 mo or recurrent</option>
+        <option value="high">High — mechanical mitral/older valve, stroke/TIA or VTE &lt;3 mo, CHA₂DS₂-VASc ≥7</option>
+      </select>
+    </div>
+
+    <div class="fld">
+      <label>Procedure bleeding-risk tier</label>
+      <div class="toggle">
+        <div class="switchbtn on" data-bleed="low" id="bLow">Minimal / low–moderate</div>
+        <div class="switchbtn" data-bleed="high" id="bHigh">High bleeding risk</div>
+      </div>
+    </div>
+
+    <div class="fld">
+      <label>Planned neuraxial or deep regional block? <span class="hint">spinal, epidural, deep plexus → ASRA intervals</span></label>
+      <div class="toggle">
+        <div class="switchbtn" data-nx="1" id="nxYes">Yes</div>
+        <div class="switchbtn on" data-nx="0" id="nxNo">No</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="run()">Generate recommendation</button>
+    <button class="btn btn-ghost" onclick="resetAll()">Reset</button>
+    <button class="btn btn-ghost" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="panel" id="results">
+    <div class="rhead">
+      <h2>Recommendation</h2>
+      <span class="note" id="stamp"></span>
+    </div>
+    <div id="warnBox" class="warns"></div>
+    <div class="summary" id="summaryCards"></div>
+    <div id="tableBox"></div>
+    <p class="cite" style="margin-top:14px;">Generated by an advisory decision-support tool. Confirm every interval against the current guideline and the individual patient before acting. Sources: CHEST 2022 · PAUSE 2019 · BRIDGE 2015 · ACC 2017 · ASRA 4th ed (2018).</p>
+  </div>
+</div>
+
+<footer>Perioperative Antithrombotic Decision-Support Tool · v1.0 · Advisory clinical decision support — human-in-the-loop required</footer>
+
+<script>
+/* ============ RULES ENGINE (embedded) ============ */
+const DRUGS = {
+  apixaban:{name:"Apixaban",cls:"DOAC"}, rivaroxaban:{name:"Rivaroxaban",cls:"DOAC"},
+  edoxaban:{name:"Edoxaban",cls:"DOAC"}, dabigatran:{name:"Dabigatran",cls:"DOAC"},
+  warfarin:{name:"Warfarin",cls:"VKA"}, aspirin:{name:"Aspirin",cls:"Antiplatelet"},
+  clopidogrel:{name:"Clopidogrel",cls:"Antiplatelet"}, prasugrel:{name:"Prasugrel",cls:"Antiplatelet"},
+  ticagrelor:{name:"Ticagrelor",cls:"Antiplatelet"},
+  lmwh_t:{name:"LMWH (therapeutic)",cls:"Parenteral"}, lmwh_p:{name:"LMWH (prophylactic)",cls:"Parenteral"},
+  ufh_iv:{name:"Heparin (IV, therapeutic)",cls:"Parenteral"},
+};
+function factorXaHold(crcl,bleed){
+  if(crcl!=null&&crcl<30) return bleed==="high"
+    ?{stop:"3 days before surgery",note:"CrCl < 30: extend interval; consider hematology input."}
+    :{stop:"2 days before surgery",note:"CrCl < 30: extended interval."};
+  return bleed==="high"
+    ?{stop:"2 days before surgery (omit ~2 pre-op days)",note:"High-bleed-risk procedure. No bridging."}
+    :{stop:"1 day before surgery (omit ~1 pre-op day)",note:"Low/standard-bleed-risk procedure. No bridging."};
+}
+function dabigatranHold(crcl,bleed){
+  if(crcl==null) return {stop:"2–4 days before surgery",note:"Enter CrCl — dabigatran is strongly renally dependent."};
+  if(crcl>=50) return bleed==="high"?{stop:"3 days before surgery",note:"CrCl ≥ 50."}:{stop:"2 days before surgery",note:"CrCl ≥ 50. No bridging."};
+  if(crcl>=30) return bleed==="high"?{stop:"4–5 days before surgery",note:"CrCl 30–50: prolonged clearance."}:{stop:"3 days before surgery",note:"CrCl 30–50: prolonged clearance."};
+  return {stop:"≥ 5 days / expert input",note:"CrCl < 30: dabigatran generally avoided; hematology input advised."};
+}
+const ENGINE={
+  apixaban:{surgical:(c,b)=>factorXaHold(c,b),asra:()=>"72 hours before neuraxial or deep block",resume:b=>b==="high"?"48–72 h post-op once hemostasis secured":"~24 h post-op",cite:"CHEST 2022 · PAUSE · ASRA 4th ed"},
+  rivaroxaban:{surgical:(c,b)=>factorXaHold(c,b),asra:()=>"72 hours before neuraxial or deep block",resume:b=>b==="high"?"48–72 h post-op once hemostasis secured":"~24 h post-op",cite:"CHEST 2022 · PAUSE · ASRA 4th ed"},
+  edoxaban:{surgical:(c,b)=>factorXaHold(c,b),asra:()=>"72 hours before neuraxial or deep block",resume:b=>b==="high"?"48–72 h post-op once hemostasis secured":"~24 h post-op",cite:"CHEST 2022 · ASRA 4th ed"},
+  dabigatran:{surgical:(c,b)=>dabigatranHold(c,b),asra:c=>(c!=null&&c<80)?"96–120 hours before block (renal impairment)":"72 hours before block (CrCl ≥ 80)",resume:b=>b==="high"?"48–72 h post-op once hemostasis secured":"~24 h post-op",cite:"CHEST 2022 · PAUSE · ASRA 4th ed"},
+  warfarin:{surgical:()=>({stop:"~5 days before surgery",note:"Verify INR ≤ 1.5 on day of surgery (≤ 1.4 for neuraxial)."}),asra:()=>"Stop ~5 days before; normal INR (≤ 1.4) required",resume:()=>"Resume ~12–24 h post-op (often evening of surgery) if hemostasis adequate",cite:"CHEST 2022 · BRIDGE · ASRA 4th ed"},
+  aspirin:{surgical:(c,b,ctx)=>{ if(ctx&&ctx.highCV) return {action:"CONTINUE",stop:"Continue perioperatively",note:"Secondary prevention / high CV risk (incl. coronary stent): continuing generally preferred."}; if(b==="high") return {action:"HOLD",stop:"Consider holding 5–7 days",note:"Primary prevention + high-bleed procedure: holding may be reasonable."}; return {action:"CONTINUE",stop:"Usually continue",note:"Weigh CV vs bleeding risk; often continued."};},asra:()=>"No specific restriction — aspirin alone is not a contraindication",resume:()=>"Resume when hemostasis secured (often within 24 h)",cite:"ASRA 4th ed · ACC/AHA"},
+  clopidogrel:{surgical:()=>({action:"HOLD",stop:"5–7 days before surgery",note:"Coordinate with surgeon/cardiology if recent stent."}),asra:()=>"5–7 days before neuraxial or deep block",resume:()=>"Resume when hemostasis secured; loading per cardiology",cite:"ASRA 4th ed · ACC/AHA"},
+  prasugrel:{surgical:()=>({action:"HOLD",stop:"7–10 days before surgery",note:"Longest hold of the P2Y12 inhibitors."}),asra:()=>"7–10 days before neuraxial or deep block",resume:()=>"Resume when hemostasis secured, per cardiology",cite:"ASRA 4th ed · ACC/AHA"},
+  ticagrelor:{surgical:()=>({action:"HOLD",stop:"3–5 days before surgery",note:"Reversible P2Y12 inhibitor."}),asra:()=>"5–7 days before neuraxial or deep block",resume:()=>"Resume when hemostasis secured, per cardiology",cite:"ASRA 4th ed · ACC/AHA"},
+  lmwh_t:{surgical:()=>({action:"HOLD",stop:"Last dose ≥ 24 h before surgery",note:"Therapeutic dosing."}),asra:()=>"24 hours before neuraxial or deep block",resume:()=>"Resume ~24 h post-op / after catheter removal once hemostasis adequate",cite:"ASRA 4th ed · CHEST 2022"},
+  lmwh_p:{surgical:()=>({action:"HOLD",stop:"Last dose ≥ 12 h before surgery",note:"Prophylactic dosing."}),asra:()=>"12 hours before neuraxial or deep block",resume:()=>"Resume per protocol; observe catheter timing rules",cite:"ASRA 4th ed"},
+  ufh_iv:{surgical:()=>({action:"HOLD",stop:"Stop 4–6 h before; verify normal aPTT",note:"Therapeutic IV heparin."}),asra:()=>"4–6 hours before block AND normal aPTT",resume:()=>"Resume ≥ 1 h after block/catheter placement per protocol",cite:"ASRA 4th ed"},
+};
+const ASRA_HOURS={apixaban:72,rivaroxaban:72,edoxaban:72,dabigatran:72,warfarin:120,clopidogrel:168,prasugrel:240,ticagrelor:168,aspirin:0,lmwh_t:24,lmwh_p:12,ufh_iv:6};
+
+function compute(input){
+  const {crcl,drugs,bleed,thrombotic,neuraxial,reason,highCV}=input;
+  const ctx={highCV:!!highCV}; const perDrug=[]; let govHours=-1,govDrug=null;
+  drugs.forEach(id=>{ const e=ENGINE[id]; if(!e)return;
+    const s=e.surgical(crcl,bleed,ctx); const action=s.action||"HOLD";
+    const row={id,name:DRUGS[id].name,cls:DRUGS[id].cls,action,preop:s.stop,note:s.note||"",
+      asra:neuraxial?e.asra(crcl):null,resume:e.resume(bleed),cite:e.cite};
+    perDrug.push(row);
+    if(neuraxial&&action!=="CONTINUE"){const h=ASRA_HOURS[id]??0; if(h>govHours){govHours=h;govDrug=row.name;}}
+  });
+  let bridging; const hasW=drugs.includes("warfarin"); const hasD=drugs.some(d=>DRUGS[d].cls==="DOAC");
+  if(hasW){
+    if(thrombotic==="high") bridging={level:"BRIDGE",text:"Bridge with therapeutic LMWH (stop LMWH ~24 h before surgery). Reserved for HIGH thrombotic risk (mechanical mitral / older valve, stroke or TIA < 3 mo, recent VTE < 3 mo, CHA₂DS₂-VASc ≥ 7).",cite:"BRIDGE 2015 · CHEST 2022"};
+    else if(thrombotic==="moderate") bridging={level:"INDIVIDUALIZE",text:"Bridging generally NOT recommended for moderate thrombotic risk; individualize. Default is no bridge.",cite:"BRIDGE 2015 · CHEST 2022"};
+    else bridging={level:"NO BRIDGE",text:"No bridging. BRIDGE trial: no-bridging is non-inferior for most low/moderate-risk AF patients and reduces bleeding.",cite:"BRIDGE 2015"};
+  } else if(hasD){ bridging={level:"NO BRIDGE",text:"No bridging for DOACs. Their short half-life makes interval-based interruption sufficient; bridging adds bleeding risk without benefit.",cite:"PAUSE 2019 · CHEST 2022"}; }
+  else { bridging={level:"N/A",text:"Bridging is a vitamin-K-antagonist concept and does not apply. Manage antiplatelets by continuation/timing and cardiology input.",cite:"—"}; }
+  let block=null;
+  if(neuraxial){ block=govDrug?{text:"Governing agent: "+govDrug+". Delay the neuraxial/deep block until its ASRA interval is met — the longest interval among held agents governs. Confirm each agent below."}:{text:"No held agent imposes a neuraxial/deep-block delay (e.g., aspirin only). Confirm individual agents below."}; }
+  const warnings=[];
+  if(reason==="stent") warnings.push("Recent coronary stent / PCI: STRONGLY consider deferring elective surgery until the minimum DAPT duration is met, and obtain cardiology input. Continue aspirin perioperatively whenever possible.");
+  if(reason==="mech_valve"&&thrombotic!=="high") warnings.push("Mechanical valve selected — most are high thrombotic risk (any mitral, or older aortic prostheses). Re-check the thrombotic tier.");
+  if(drugs.includes("dabigatran")&&crcl!=null&&crcl<30) warnings.push("Dabigatran with CrCl < 30: markedly prolonged clearance — obtain hematology input and extend intervals.");
+  if(crcl==null&&drugs.some(d=>DRUGS[d].cls==="DOAC")) warnings.push("Renal function (CrCl) not entered — DOAC intervals depend on it. Results assume normal renal function.");
+  if(neuraxial&&(drugs.includes("prasugrel")||drugs.includes("ticagrelor")||drugs.includes("clopidogrel"))) warnings.push("P2Y12 inhibitor + planned neuraxial/deep block requires a multi-day hold — verify hold completed and coordinate with cardiology re: stent risk.");
+  return {perDrug,bridging,block,govHours,warnings};
+}
+
+/* ============ UI WIRING ============ */
+const state={drugs:new Set(),bleed:"low",nx:false,cv:true};
+const grid=document.getElementById("drugGrid");
+Object.entries(DRUGS).forEach(([id,d])=>{
+  const el=document.createElement("label"); el.className="chk"; el.dataset.id=id;
+  el.innerHTML=`<input type="checkbox"><span>${d.name}</span><span class="cls">${d.cls}</span>`;
+  el.querySelector("input").addEventListener("change",e=>{
+    if(e.target.checked){state.drugs.add(id);el.classList.add("on");}else{state.drugs.delete(id);el.classList.remove("on");}
+    document.getElementById("cvWrap").style.display=state.drugs.has("aspirin")?"block":"none";
+  });
+  grid.appendChild(el);
+});
+function bindToggle(sel,attr,cb){document.querySelectorAll(sel).forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(sel).forEach(x=>x.classList.remove("on")); b.classList.add("on"); cb(b.dataset[attr]);
+}));}
+bindToggle("[data-bleed]","bleed",v=>state.bleed=v);
+bindToggle("[data-nx]","nx",v=>state.nx=(v==="1"));
+bindToggle("[data-cv]","cv",v=>state.cv=(v==="1"));
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+function run(){
+  if(state.drugs.size===0){alert("Select at least one antithrombotic agent.");return;}
+  const crclRaw=document.getElementById("crcl").value;
+  const input={
+    crcl:crclRaw===""?null:Number(crclRaw),
+    drugs:[...state.drugs],
+    bleed:state.bleed,
+    thrombotic:document.getElementById("thrombotic").value,
+    neuraxial:state.nx,
+    reason:document.getElementById("reason").value,
+    highCV:state.cv,
+  };
+  const r=compute(input);
+
+  // warnings
+  const wb=document.getElementById("warnBox");
+  wb.innerHTML=r.warnings.map(w=>`<div class="warn">⚠ ${esc(w)}</div>`).join("");
+
+  // summary cards
+  const sc=document.getElementById("summaryCards");
+  let cards=`<div class="scard bridge"><h3>Bridging</h3><div class="big">${esc(r.bridging.level)}</div><p>${esc(r.bridging.text)}</p><div class="cite">${esc(r.bridging.cite)}</div></div>`;
+  if(r.block){cards+=`<div class="scard block"><h3>Neuraxial / Deep Block</h3><div class="big">${r.govHours>0?"Delay required":"Check agents"}</div><p>${esc(r.block.text)}</p></div>`;}
+  sc.innerHTML=cards;
+
+  // table
+  let rows=r.perDrug.map(d=>`<tr>
+    <td><span class="drugname">${esc(d.name)}</span><br><span class="drugcls">${esc(d.cls)}</span></td>
+    <td><span class="pill ${d.action}">${d.action}</span></td>
+    <td>${esc(d.preop)}${d.note?`<br><span class="note">${esc(d.note)}</span>`:""}</td>
+    ${state.nx?`<td class="asra-line">${esc(d.asra)}</td>`:""}
+    <td>${esc(d.resume)}<div class="cite">${esc(d.cite)}</div></td>
+  </tr>`).join("");
+  document.getElementById("tableBox").innerHTML=`<table><thead><tr>
+    <th>Agent</th><th>Action</th><th>Pre-op hold</th>${state.nx?"<th>ASRA interval (neuraxial/deep block)</th>":""}<th>Resume post-op</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+
+  document.getElementById("stamp").textContent="Generated "+new Date().toLocaleString();
+  const res=document.getElementById("results"); res.style.display="block";
+  res.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function resetAll(){
+  state.drugs.clear(); state.bleed="low"; state.nx=false; state.cv=true;
+  document.querySelectorAll(".chk").forEach(c=>{c.classList.remove("on");c.querySelector("input").checked=false;});
+  document.getElementById("crcl").value=""; document.getElementById("reason").value="afib";
+  document.getElementById("thrombotic").value="moderate"; document.getElementById("cvWrap").style.display="none";
+  document.querySelectorAll("[data-bleed]").forEach(x=>x.classList.remove("on")); document.getElementById("bLow").classList.add("on");
+  document.querySelectorAll("[data-nx]").forEach(x=>x.classList.remove("on")); document.getElementById("nxNo").classList.add("on");
+  document.querySelectorAll("[data-cv]").forEach(x=>x.classList.remove("on")); document.getElementById("cvHigh").classList.add("on");
+  document.getElementById("results").style.display="none";
+}
+</script>
+</body>
+</html>

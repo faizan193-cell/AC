@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Perioperative Antithrombotic Decision-Support Tool</title>
+<!-- PWA / iOS "Add to Home Screen" -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f3864">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anticoag Tool">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   :root{
     --navy:#1f3864; --blue:#2e5496; --lite:#dce6f1; --accent:#2e7d5b;
@@ -81,6 +90,14 @@
   .note{color:var(--muted);font-size:12px;}
   .empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:22px;font-size:14px;}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:18px;}
+  #a2hs{position:fixed;left:12px;right:12px;bottom:12px;z-index:50;display:none;
+    background:var(--navy);color:#fff;border-radius:14px;padding:12px 14px;
+    box-shadow:0 8px 28px rgba(0,0,0,.28);font-size:13.5px;align-items:center;gap:11px;}
+  #a2hs .ic{font-size:22px;line-height:1;}
+  #a2hs .txt{flex:1;line-height:1.4;}
+  #a2hs .txt b{color:#fff;}
+  #a2hs .x{background:rgba(255,255,255,.18);border:none;color:#fff;width:28px;height:28px;
+    border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0;}
   @media print{
     header,.disclaimer{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     .panel:not(#results){display:none;} .actions{display:none;} body{background:#fff;}
@@ -181,6 +198,11 @@
 </div>
 
 <footer>Perioperative Antithrombotic Decision-Support Tool · v1.0 · Advisory clinical decision support — human-in-the-loop required</footer>
+<div id="a2hs">
+  <span class="ic">📲</span>
+  <span class="txt">Install as an app: tap the <b>Share</b> button, then <b>“Add to Home Screen.”</b></span>
+  <button class="x" onclick="dismissA2HS()" aria-label="Dismiss">✕</button>
+</div>
 
 <script>
 /* ============ RULES ENGINE (embedded) ============ */
@@ -323,6 +345,15 @@ function resetAll(){
   document.querySelectorAll("[data-cv]").forEach(x=>x.classList.remove("on")); document.getElementById("cvHigh").classList.add("on");
   document.getElementById("results").style.display="none";
 }
+
+/* ============ iOS "Add to Home Screen" hint ============ */
+function isIos(){return /iphone|ipad|ipod/i.test(window.navigator.userAgent);}
+function isStandalone(){return ("standalone" in window.navigator && window.navigator.standalone) || window.matchMedia("(display-mode: standalone)").matches;}
+function dismissA2HS(){var b=document.getElementById("a2hs");if(b)b.style.display="none";try{localStorage.setItem("a2hs_dismissed","1");}catch(e){}}
+(function(){
+  try{ if(localStorage.getItem("a2hs_dismissed")) return; }catch(e){}
+  if(isIos() && !isStandalone()){ var b=document.getElementById("a2hs"); if(b) b.style.display="flex"; }
+})();
 </script>
 </body>
 </html>
